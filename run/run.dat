@@ -1,0 +1,85 @@
+int START 0
+int FINISH 300
+int QUARK_PAIRS 4
+int PRIN_COMP 4
+int NSAMPLES 100000
+int NTRACE 1000
+
+string EMULATOR_CHOICE GAUSSIAN_PROCESS
+string MCMC_CHOICE GAUSSIAN
+
+bool CUT_MODEL true
+bool CUT_EXP true
+bool COMMON_WIDTH true
+bool FIX_G0 true
+bool USE_SCALE_X true
+
+double PCA_CUTOFF 0.5
+bool MEAN_ERROR true
+bool USE_MEAN_AS_ERROR false
+double MEAN_AS_ERROR 0.1
+bool REDUCE_DIM true
+bool REDUCE_DIM_SEPARATELY false
+
+double EPSILON 1e-8
+double SIGMA_F 0.5
+double CHARAC_LENGTH 0.35
+double SIGMA_NOISE 0.05
+
+string ACTIVATION TANH
+string LOSS L2
+string FINAL_ACTIVATION IDENTITY
+string SOLVER SGD
+int EPOCHS 5000
+double LEARNING_RATE 0.001
+double REGULAR_PARAM 0.000001
+double MOMENTUM 0.9
+double BETA1 0.9
+double BETA2 0.999
+int MINI_BATCH_SIZE 20
+int LAYERS 1
+int LAYER0_SIZE 100
+
+double MCMC_WIDTH 0.02
+double MCMC_MIN 0.0
+double MCMC_MAX 1.0
+int MCMC_POST 20
+double MCMC_PERCENT_ERROR 0.1
+
+int GRID 100
+double ETA_MAX 8
+
+double CHI0 7.2728e+02
+double CHI1 -2.2654e+02
+double CHI2 -8.3627e+01
+double CHI3 3.0778e+02
+
+string MODEL_FOLDER model_output
+string MODEL_NAME_0 I211_J211.dat
+string MODEL_NAME_1 I2212_J2212.dat
+string MODEL_NAME_2 I321_J2212.dat
+string MODEL_NAME_3 I321_J321.dat
+string EXP_FOLDER exp_data
+string EXP_NAME_0 star_pipi.dat
+string EXP_NAME_1 star_ppbar.dat
+string EXP_NAME_2 star_pK.dat
+string EXP_NAME_3 star_KK.dat
+
+string OUTPUT_FOLDER stat_output_300_9
+string RUN_FOLDER run
+string TRAINPOINTS_FILE trainplot
+string EXPZ_FILE expz
+
+string PARAM_FILE parameters.dat
+string PARAM_FIXED_FILE fixed_parameters.dat
+string PARAM_PRIOR_FILE parameter_priors.dat
+string PARAMS_FILE lhc_parameters_300_9.dat
+string MCMCTRACE_FILE mcmctrace
+string MCMCHISTORY_FILE mcmchistory
+
+string GAB_FILE gabfunctions
+string FULLG_FILE fullg
+string MINMAX_FILE minmax
+string POST_EXT posterior
+string FILE_EXT dat
+string CSV_EXT csv

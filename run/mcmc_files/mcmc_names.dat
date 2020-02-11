@@ -1,0 +1,8 @@
+UNIFORM InvCoshPar_uu_width 0 1	$w^{uu}$
+UNIFORM InvCoshPar_uu_g1 0 1  $g_1^{uu}$
+UNIFORM InvCoshPar_ud_width 0 1	$w^{ud}$
+UNIFORM InvCoshPar_ud_g1 0 1  $g_1^{ud}$
+UNIFORM InvCoshPar_us_width 0 1	$w^{us}$
+UNIFORM InvCoshPar_us_g1 0 1  $g_1^{us}$
+UNIFORM InvCoshPar_ss_width 0 1	$w^{ss}$
+UNIFORM InvCoshPar_ss_g1 0 1  $g_1^{ss}$

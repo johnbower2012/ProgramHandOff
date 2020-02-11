@@ -1,0 +1,14 @@
+˘\bool ALLCHARGES false # calcs BF(Delta eta) for all charges
+bool GAUSSIAN false # calcs BF normalized to unity for two charges, uses SIGMA_GAUSS for eta width
+bool SINGLEWAVE false # For a single gaussian, same as setting number of quarks in QGP to zero, with single wave characterized by SIGMA_LOCAL (SIGMA_QGP irrelevant)
+int NSAMPLE 20000000
+double SIGMAPHI_QGP 0.2 # spread of <(Del u_phi)^2>/<u_t^2> due to diffusion
+double SIGMAPHI_HAD 0.1 # spread of <(Del u_phi)^2>/<u_t^2> due to diffusion
+double DELY 0.1 # binning width for BF
+double SIGMA_GAUSS 0.3 # eta width if GAUSSIAN is set
+double BW_T 100
+double BW_UPERP 0.75
+double BW_LAMBDA_VISC 0.8
+double BARYON_FUDGE 0.75
+bool STAR_ACCEPTANCE_I true
+bool STAR_ACCEPTANCE_J true

@@ -1,0 +1,16 @@
+string MODEL_FOLDER model_output
+string PARAM_FILE parameters.dat
+string PARAM_FIXED_FILE fixed_parameters.dat
+string PARAM_PRIOR_FILE parameter_priors.dat
+string PARAMS_FILE lhc_parameters.dat
+string GAB_FILE gabfunctions.dat
+int QUARK_PAIRS 4
+int GRID 100
+double ETA_MAX 8
+double CHI0 7.2728e+02
+double CHI1 -2.2654e+02
+double CHI2 -8.3627e+01
+double CHI3 3.0778e+02
+bool FIX_G0 true
+bool COMMON_WIDTH true
+

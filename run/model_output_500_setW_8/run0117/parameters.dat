@@ -1,0 +1,16 @@
+InvCoshPar_uu_width 1 
+InvCoshPar_uu_g0 1.00259 
+InvCoshPar_uu_g1 0.0440882 
+InvCoshPar_uu_g2 -0.629258 
+InvCoshPar_ud_width 1 
+InvCoshPar_ud_g0 0.709847 
+InvCoshPar_ud_g1 -1.49499 
+InvCoshPar_ud_g2 -2 
+InvCoshPar_us_width 1 
+InvCoshPar_us_g0 0.762674 
+InvCoshPar_us_g1 -0.0521042 
+InvCoshPar_us_g2 -0.300601 
+InvCoshPar_ss_width 1 
+InvCoshPar_ss_g0 0.143344 
+InvCoshPar_ss_g1 -1.75952 
+InvCoshPar_ss_g2 -1.27054 

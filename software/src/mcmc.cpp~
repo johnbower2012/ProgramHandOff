@@ -1,0 +1,319 @@
+#include "mcmc.h"
+
+/*RANDOM--
+***************/
+CRandom::CRandom(){
+  this->seed = std::chrono::system_clock::now().time_since_epoch().count();
+  generator.seed(seed);
+}
+CRandom::CRandom(unsigned Seed){
+  this->seed = Seed;
+  generator.seed(this->seed);
+}
+void CRandom::setSeed(unsigned Seed){
+  this->seed = Seed;
+  this->generator.seed(this->seed);
+}
+void CRandom::setSeedClock(){
+  this->seed = std::chrono::system_clock::now().time_since_epoch().count();
+  generator.seed(seed);
+}
+double CRandom::normal(){
+  return this->normal_dist(generator);
+}
+double CRandom::uniform(){
+  return this->uniform_dist(generator);
+}
+
+/*CLikelihood--
+***************/
+double CLHGaussian::getLikelihood(Eigen::MatrixXd Z1, Eigen::MatrixXd Z2, Eigen::MatrixXd Error){
+ double z=0.0, diff=0.0;
+ int obsCount = Z1.cols();
+  for(int i=0;i<obsCount;i++){
+    diff = (Z1(0,i) - Z2(0,i))/Error(0,i);
+    z += diff*diff;
+  }
+  z *= 0.5;
+  return -z;
+}
+double CLHLorentzian::getLikelihood(Eigen::MatrixXd Z1, Eigen::MatrixXd Z2, Eigen::MatrixXd Error){
+ int obsCount = Z1.cols();
+ double z=1.0, diff=0.0;
+ //g_half=tgamma(0.5), g_k=tgamma((1.0+(double)obsCount)/2.0);
+  for(int i=0;i<obsCount;i++){
+    diff = (Z1(0,i) - Z2(0,i))/Error(0,i);
+    z *= 1.0/(1.0+0.5*diff*diff);
+  }
+  return log(z);
+}
+double CLHCosh::getLikelihood(Eigen::MatrixXd Z1, Eigen::MatrixXd Z2, Eigen::MatrixXd Error){
+ int obsCount = Z1.cols();
+ double z=1.0, diff=0.0;
+ //g_half=tgamma(0.5), g_k=tgamma((1.0+(double)obsCount)/2.0);
+  for(int i=0;i<obsCount;i++){
+    diff = (Z1(0,i) - Z2(0,i))/Error(0,i);
+    z *= 1.0/cosh(diff*diff);
+  }
+  return log(z);
+}
+
+
+/*SETUP--
+***************/
+CMCMC::CMCMC(){
+  if(this->FLikelihood != nullptr){
+    delete this->FLikelihood;
+    this->FLikelihood = nullptr;
+  }
+  this->maxLogLikelihood = -std::numeric_limits<double>::infinity();
+  this->Likelihood = 0.0;
+}
+CMCMC::CMCMC(Eigen::MatrixXd newRange, Eigen::VectorXd newWidths){
+  this->maxLogLikelihood = -std::numeric_limits<double>::infinity();
+  this->Likelihood = 0.0;
+  this->random.setSeedClock();
+
+  this->Range = newRange;
+  this->Widths = newWidths;
+
+  this->paramCount = this->Range.rows();
+  this->setPosition();
+}
+void CMCMC::Construct(Eigen::MatrixXd newRange, Eigen::VectorXd newWidths, std::string slikelihood){
+  this->SLikelihood = slikelihood;
+  if(this->FLikelihood != nullptr){
+    delete this->FLikelihood;
+  }
+  if(this->SLikelihood == "GAUSSIAN"){
+    this->FLikelihood = new CLHGaussian;
+  }else if(this->SLikelihood == "LORENTZIAN"){
+    this->FLikelihood = new CLHLorentzian;
+  }else if(this->SLikelihood == "COSH"){
+    this->FLikelihood = new CLHCosh;
+  }else{
+    printf("No option %s for CLHLikelihood in MCMC.\n",slikelihood.c_str());
+    exit(1);
+  }
+
+  this->maxLogLikelihood = -std::numeric_limits<double>::infinity();
+  this->Likelihood =  -std::numeric_limits<double>::infinity();;
+  this->random.setSeedClock();
+
+  this->Range = newRange;
+  this->Widths = newWidths;
+
+  this->paramCount = this->Range.rows();
+  this->setPosition();
+}
+void CMCMC::setSeed(unsigned Seed){
+  this->random.setSeed(Seed);
+}
+void CMCMC::setRange(Eigen::MatrixXd newRange){
+  this->Range = newRange;
+
+  this->paramCount = this->Range.rows();
+  this->Position = Eigen::MatrixXd::Zero(1,paramCount);
+  this->testPosition = Eigen::MatrixXd::Zero(1,paramCount);
+}
+void CMCMC::setWidths(Eigen::VectorXd newWidths){
+  this->Widths = newWidths;
+}
+void CMCMC::setPosition(Eigen::MatrixXd newPosition){
+  this->Position = newPosition;
+}
+void CMCMC::setPosition(){
+  this->Position = Eigen::MatrixXd::Zero(1,this->paramCount);
+  this->testPosition = Eigen::MatrixXd::Zero(1,this->paramCount);
+  for(int i=0;i<this->paramCount;i++){
+    this->Position(0,i) = this->Range(i,0) + this->random.uniform()*(this->Range(i,1)-this->Range(i,0));
+  }
+}
+
+
+/*STEP--
+**************/
+void CMCMC::step(){
+  for(int i=0;i<this->paramCount;i++){
+    this->testPosition(0,i) = this->Position(0,i) + this->random.normal()*this->Widths(i);
+  }
+}
+bool CMCMC::decide(double likelihood){
+  double ratio;//, llh;
+  for(int i=0;i<paramCount;i++){
+    if(this->testPosition(0,i) < this->Range(i,0)){
+      return false;
+    } else if(this->testPosition(0,i) > this->Range(i,1)){
+      return false;
+    }
+  }
+
+  ratio = likelihood - this->Likelihood;
+  if(ratio>0){
+    this->Position = this->testPosition;
+    this->Likelihood = likelihood;
+    likelihood = this->Likelihood;
+    //llh = log(likelihood);
+    if(likelihood > this->maxLogLikelihood){
+      this->maxLogLikelihood = likelihood;
+      printf("MaxLogLH: %f\n",this->maxLogLikelihood);
+    }
+    return true;
+  }else{
+    if(log(random.uniform())<ratio){
+      this->Position = this->testPosition;
+      this->Likelihood = likelihood;
+      likelihood = this->Likelihood;
+      //llh = log(likelihood);      
+      if(likelihood > this->maxLogLikelihood){
+	this->maxLogLikelihood = likelihood;
+	printf("MaxLogLH: %f\n",this->maxLogLikelihood);
+      }
+      return true;
+    }else{
+      return false;
+    }
+  }
+}
+Eigen::MatrixXd CMCMC::Run(CEmulator *Emulator, Eigen::MatrixXd targetZ, Eigen::MatrixXd Error, int NSamp){
+  this->NSamples = NSamp;
+  this->Likelihood = this->FLikelihood->getLikelihood(targetZ,Emulator->Emulate(this->Position),Error);
+  int
+    percent=0,
+    print=this->NSamples/10,
+    obsCount=targetZ.cols(),
+    hist=0;
+  Eigen::MatrixXd 
+    testZ = Eigen::MatrixXd::Zero(1,obsCount);
+  double 
+    acceptedSteps = 0.0,
+    likelihood;
+  Eigen::MatrixXd 
+    History = Eigen::MatrixXd::Zero(this->NSamples/5,this->paramCount+obsCount+1);
+  for(int step=0;step<this->NSamples;step++){
+    this->step();
+    testZ = Emulator->Emulate(this->testPosition);
+    likelihood = this->FLikelihood->getLikelihood(targetZ,testZ,Error);
+    if(this->decide(likelihood)){
+      acceptedSteps++;
+    }
+    if((step+1)%5==0){
+      History(hist,0) = this->Likelihood;
+      History.block(hist,1,1,this->paramCount) = this->Position;
+      History.block(hist,1+this->paramCount,1,obsCount) = testZ;
+      hist++;
+    }
+    if((step+1)%print==0){
+      percent+=10;
+      printf("%d%% completed...%f%% steps accepted\n",percent,acceptedSteps*100.0/(double)(step+1));
+    }
+  }
+  acceptedSteps *= 100.0/(double) this->NSamples;
+  printf("Percent Acceptance: %f%%...\n",acceptedSteps);
+  printf("MaxLLH: %f...\n",this->maxLogLikelihood);
+  return History;
+}
+    
+/*RUN--
+***************/
+
+
+/*************
+
+GRAVEYARD
+
+*************/
+/*
+
+
+double MCMC::getLogLikelihoodGaussian(Eigen::MatrixXd Z){
+  double z=0.0, diff=0.0;
+  for(int i=0;i<this->obsCount;i++){
+    diff = (Z(0,i) - this->targetValue(0,i));
+    z += diff*diff;
+  }
+  z *= 0.5;
+  return -z;
+}
+double MCMC::getLogLikelihoodLorentzian(Eigen::MatrixXd Z){
+  double z=0.0, diff=0.0, width=0.25;
+  for(int i=0;i<this->obsCount;i++){
+    diff = (Z(0,i) - this->targetValue(0,i));
+    z += diff*diff;
+  }
+  z += 0.25*width*width;
+  return -log(z);
+}
+bool MCMC::decideGaussian(Eigen::MatrixXd Z){
+  double random, LH, ratio;
+  for(int i=0;i<paramCount;i++){
+    if(this->testPosition(0,i) < this->Range(i,0)){
+      return false;
+    } else if(this->testPosition(0,i) > this->Range(i,1)){
+      return false;
+    }
+  }
+  LH = this->getLogLikelihoodGaussian(Z);
+
+  ratio = LH - this->Likelihood;
+  if(ratio>0){
+    this->Position = this->testPosition;
+    this->Likelihood = LH;
+    if(this->Likelihood > this->maxLogLikelihood){
+      this->maxLogLikelihood = this->Likelihood;
+      printf("MaxLogLH: %f\n",this->maxLogLikelihood);
+    }
+    return true;
+  }else{
+    random = uniform();
+    if(log(random)<ratio){
+      this->Position = this->testPosition;
+      this->Likelihood = LH;
+      if(this->Likelihood > this->maxLogLikelihood){
+	this->maxLogLikelihood = this->Likelihood;
+	printf("MaxLogLH: %f\n",this->maxLogLikelihood);
+      }
+      return true;
+    }else{
+      return false;
+    }
+  }
+}
+bool MCMC::decideLorentzian(Eigen::MatrixXd Z){
+  double random, LH, ratio;
+  for(int i=0;i<paramCount;i++){
+    if(this->testPosition(0,i) < this->Range(i,0)){
+      return false;
+    } else if(this->testPosition(0,i) > this->Range(i,1)){
+      return false;
+    }
+  }
+  LH = this->getLogLikelihoodLorentzian(Z);
+
+  ratio = LH - this->Likelihood;
+  if(ratio>0){
+    this->Position = this->testPosition;
+    this->Likelihood = LH;
+    if(this->Likelihood > this->maxLogLikelihood){
+      this->maxLogLikelihood = this->Likelihood;
+      printf("MaxLogLH: %f\n",this->maxLogLikelihood);
+    }
+    return true;
+  }else{
+    random = uniform();
+    if(log(random)<ratio){
+      this->Position = this->testPosition;
+      this->Likelihood = LH;
+      if(this->Likelihood > this->maxLogLikelihood){
+	this->maxLogLikelihood = this->Likelihood;
+	printf("MaxLogLH: %f\n",this->maxLogLikelihood);
+      }
+      return true;
+    }else{
+      return false;
+    }
+  }
+}
+
+
+*/
